@@ -6,14 +6,24 @@ import { Courses } from './views/Courses';
 import { CourseDetail } from './views/CourseDetail';
 import { ExerciseDetail } from './views/ExerciseDetail';
 import { Ranking } from './views/Ranking';
+import { Profile } from './views/Profile';
+import { Landing } from './views/Landing';
+import { SupportChat } from './components/SupportChat';
+import { StreakModal } from './components/StreakModal';
 import { ViewState, User, Course } from './types';
 import { MOCK_USER, MOCK_COURSES } from './constants';
-import { Menu, Bell } from 'lucide-react';
+import { Menu, Bell, Zap, LogOut } from 'lucide-react';
 
 const App: React.FC = () => {
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<'student' | 'teacher' | null>(null);
+
+  // App State
   const [view, setView] = useState<ViewState>({ type: 'DASHBOARD' });
   const [isDark, setIsDark] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
   
   // Data State
   const [user] = useState<User>(MOCK_USER);
@@ -27,6 +37,26 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Handle Login
+  const handleLogin = (role: 'student' | 'teacher') => {
+    setUserRole(role);
+    setIsAuthenticated(true);
+    
+    if (role === 'teacher') {
+      // Mock teacher experience (or just alert for now since dashboard is student focused)
+      alert("Vista de Docente en desarrollo. Redirigiendo a vista de estudiante para demostración.");
+      // In a real app, you would set a separate TEACHER_DASHBOARD view
+    }
+    
+    setView({ type: 'DASHBOARD' });
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserRole(null);
+    setView({ type: 'DASHBOARD' }); // Reset view for next login
+  };
 
   // Navigation Handlers
   const handleNavigate = (newView: ViewState) => {
@@ -54,7 +84,9 @@ const App: React.FC = () => {
       case 'COURSES':
         return <Courses courses={courses} onSelectCourse={handleSelectCourse} />;
       case 'RANKING':
-        return <Ranking />;
+        return <Ranking user={user} />;
+      case 'PROFILE':
+        return <Profile user={user} />;
       case 'COURSE_DETAIL':
         const selectedCourse = courses.find(c => c.id === view.courseId);
         if (!selectedCourse) return <div>Curso no encontrado</div>;
@@ -81,6 +113,21 @@ const App: React.FC = () => {
     }
   };
 
+  // If not authenticated, show Landing
+  if (!isAuthenticated) {
+    return (
+       <>
+         <div className={isDark ? 'dark' : ''}>
+           {/* Temporary Theme Toggle on Landing for Demo Purposes */}
+           <div className="absolute top-4 right-4 z-50 text-white">
+             <ThemeToggle isDark={isDark} toggleTheme={() => setIsDark(!isDark)} />
+           </div>
+           <Landing onLogin={handleLogin} />
+         </div>
+       </>
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-slate-50 dark:bg-dark-900 transition-colors duration-300`}>
       <Sidebar 
@@ -101,7 +148,14 @@ const App: React.FC = () => {
             >
               <Menu size={24} />
             </button>
-            {/* Breadcrumb mock or Title could go here */}
+            {/* Streak Trigger (Mobile/Desktop) */}
+            <button 
+              onClick={() => setIsStreakModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/10 text-yellow-700 dark:text-yellow-500 rounded-full border border-yellow-200 dark:border-yellow-900/30 hover:bg-yellow-100 transition-colors"
+            >
+               <Zap size={16} fill="currentColor" />
+               <span className="font-bold text-sm">{user.streak}</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -111,21 +165,42 @@ const App: React.FC = () => {
             </button>
             <div className="h-6 w-px bg-slate-200 dark:bg-dark-700 mx-1"></div>
             <ThemeToggle isDark={isDark} toggleTheme={() => setIsDark(!isDark)} />
-            <div className="flex items-center gap-3 ml-2">
-              <img 
-                src={user.avatar} 
-                alt="Profile" 
-                className="w-9 h-9 rounded-full border-2 border-white dark:border-dark-700 shadow-sm"
-              />
-            </div>
+            
+            <button 
+              onClick={() => handleNavigate({ type: 'PROFILE' })}
+              className="flex items-center gap-3 ml-2 hover:opacity-80 transition-opacity focus:outline-none"
+              title="Ver Perfil"
+            >
+              <div className="relative">
+                 {/* Mini Frame Preview in Header */}
+                 <div className={`absolute -inset-1 rounded-full border-2 ${user.inventory.find(i => i.id === user.frame)?.preview || 'border-transparent'}`}></div>
+                 <img 
+                  src={user.avatar} 
+                  alt="Profile" 
+                  className={`w-9 h-9 rounded-full bg-white relative z-10`}
+                />
+              </div>
+            </button>
+            
+            <button 
+              onClick={handleLogout}
+              className="ml-2 text-slate-400 hover:text-red-500 transition-colors"
+              title="Cerrar Sesión"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         </header>
 
         {/* Dynamic View Content */}
-        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full relative">
           {renderContent()}
         </main>
       </div>
+
+      {/* Global Components */}
+      <SupportChat />
+      <StreakModal isOpen={isStreakModalOpen} onClose={() => setIsStreakModalOpen(false)} user={user} />
     </div>
   );
 };

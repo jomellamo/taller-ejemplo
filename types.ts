@@ -30,13 +30,41 @@ export type ViewState =
   | { type: 'COURSES' }
   | { type: 'COURSE_DETAIL'; courseId: string }
   | { type: 'EXERCISE_DETAIL'; courseId: string; exerciseId: string }
-  | { type: 'RANKING' };
+  | { type: 'RANKING' }
+  | { type: 'PROFILE' };
+
+export interface Achievement {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  date: string;
+}
+
+export interface CosmeticsItem {
+  id: string;
+  name: string;
+  preview: string; // URL or CSS class
+  type: 'avatar' | 'frame';
+  unlocked: boolean;
+  requiredLevel: number;
+}
 
 export interface User {
-  name: string;
+  name: string; // Real Name (private/profile)
+  nickname: string; // Display Name (ranking)
+  email: string;
   avatar: string;
+  frame: string | null; // ID of selected frame
+  isPublic: boolean; // Privacy setting
   level: number;
   streak: number;
+  streakHistory: string[]; // Dates 'YYYY-MM-DD'
+  xp: number;
+  bio: string;
+  joinDate: string;
+  achievements: Achievement[];
+  inventory: CosmeticsItem[];
 }
 
 export interface ChatMessage {

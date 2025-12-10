@@ -13,10 +13,6 @@ export const getAIChatResponse = async (
   try {
     const model = 'gemini-2.5-flash';
     
-    // Construct a context-aware prompt based on history
-    // Note: In a production app using ai.chats.create is better for session management,
-    // but here we construct the prompt statefully for simplicity.
-    
     const conversationHistory = history.map(msg => 
       `${msg.role === 'user' ? 'Estudiante' : 'Tutor'}: ${msg.text}`
     ).join('\n');
@@ -56,5 +52,45 @@ export const getAIChatResponse = async (
   } catch (error) {
     console.error("Error fetching AI help:", error);
     return "Hubo un error de conexión. Por favor intenta de nuevo.";
+  }
+};
+
+export const getGeneralSupportResponse = async (
+  history: ChatMessage[],
+  newMessage: string
+): Promise<string> => {
+  try {
+    const model = 'gemini-2.5-flash';
+    
+    const conversationHistory = history.map(msg => 
+      `${msg.role === 'user' ? 'Usuario' : 'Soporte'}: ${msg.text}`
+    ).join('\n');
+
+    const prompt = `
+      Actúa como "Soporte TELOPROGRAMO", un asistente de ayuda técnica y motivacional para una plataforma de aprendizaje de programación.
+      
+      HISTORIAL:
+      ${conversationHistory}
+      
+      USUARIO:
+      ${newMessage}
+      
+      INSTRUCCIONES:
+      1. Tu objetivo es ayudar al usuario a navegar la app, resolver dudas técnicas sobre la plataforma, o motivarlo.
+      2. La app tiene: Cursos, Ranking, Perfil (con logros y marcos desbloqueables), y Ejercicios.
+      3. Sé amable, profesional y conciso.
+      4. Si preguntan código específico, diles que entren a un curso y usen la ayuda del ejercicio.
+      5. Responde en Español.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: prompt,
+    });
+
+    return response.text || "Disculpa, estoy teniendo problemas técnicos.";
+  } catch (error) {
+    console.error("Error support chat:", error);
+    return "Error de conexión con el soporte.";
   }
 };
